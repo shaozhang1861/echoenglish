@@ -1,0 +1,5 @@
+{
+  "name": "EchoEnglish - 英语口语练习助手",
+  "description": "上传视频，智能拆解口语素材，逐句跟读练习",
+  "requestFramePermissions": ["microphone"]
+}
