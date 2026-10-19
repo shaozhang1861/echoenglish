@@ -1,0 +1,28 @@
+{
+  "id": 1,
+  "filename": "test1.MP4",
+  "mimeType": "video/mp4",
+  "createdAt": "2026-10-18T00:00:00.000Z",
+  "recordingIndices": [],
+  "transcribedTexts": {},
+  "transcribed": true,
+  "sentences": [
+    { "text": "What's a little bit misunderstood about me is that because my three things, like the fashion world, skiing, school, they're like kind of geographically disparate.", "start": 0, "end": 7 },
+    { "text": "So it's not like I wake up in the morning and like ski for three hours and then go to my like seminar in the afternoon and then go shoot a campaign at night.", "start": 7, "end": 16 },
+    { "text": "Realistically what I'm really good at is less doing everything at the same time and more pivoting with very low emotional toll.", "start": 16, "end": 23 },
+    { "text": "So you do like periods of hyper focus on like one specific thing and then switch.", "start": 23, "end": 27 },
+    { "text": "Yeah and it's like when you're doing one thing, it's rest from another thing.", "start": 27, "end": 30 },
+    { "text": "So for example, if I'm training or if I'm working out, like that's a physical toll, but if I'm sitting in a classroom, my body's repairing itself while I'm doing something else.", "start": 30, "end": 38 },
+    { "text": "So it's like I have all these tasks running in the background.", "start": 38, "end": 41 },
+    { "text": "I would say is like No. 1, go and do the work beforehand, so like have a sense of your value.", "start": 41, "end": 47 },
+    { "text": "I would say that's super important, what differentiates you, why do you deserve what you think you deserve, and then how to ask, so those are I think the two steps.", "start": 47, "end": 55 },
+    { "text": "And the biggest thing is honestly don't be afraid to try because the worst someone can say is no and then you can settle for something in between.", "start": 55, "end": 61 },
+    { "text": "I was always the small fish in the big pond, which is an incredible place to be as a young person because you're a sponge right, your neuroplasticity's off the charts, you're learning from just existing, and you're so perceptive, you're picking up all these subconscious cues.", "start": 61, "end": 74 },
+    { "text": "When you are around people who know more than you, are more successful than you, are better at skiing than you, I was always the young one, the little one, maybe the only girl, like for some reason I felt like I was the small fish.", "start": 74, "end": 84 },
+    { "text": "Having that mentality allowed me to grow super fast and it also allowed me to have a degree of humility.", "start": 84, "end": 89 },
+    { "text": "When it came to learning, it's impossible to hurt my feelings with criticism.", "start": 89, "end": 93 },
+    { "text": "Like I think that's a really great skill that I've learned is that it's not everyone's job to be able to present something nicely to you, so to be able to be given constructive criticism, I think is the biggest blessing.", "start": 93, "end": 104 },
+    { "text": "But also it's a two way street, you have to be able to receive it.", "start": 104, "end": 107 },
+    { "text": "If every time I got constructive criticism I was offended, I would never grow.", "start": 107, "end": 111 }
+  ]
+}
