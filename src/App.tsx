@@ -337,8 +337,9 @@ export default function App() {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp4' });
-        if (videoId != null) {
+        const recordingMimeType = audioChunksRef.current[0]?.type || mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: recordingMimeType });
+        if (videoId != null && !api.isDemoMode) {
           // Upload to server when we have a video ID
           api.uploadRecording(videoId, index, audioBlob).then(() => {
             // 加时间戳破坏浏览器缓存，确保播放最新录音
