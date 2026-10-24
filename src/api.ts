@@ -5,6 +5,9 @@
 
 const API = '/api';
 
+export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+const demoAsset = (name: string) => `${import.meta.env.BASE_URL}demo/${name}`;
+
 export type VideoListItem = {
   id: number;
   filename: string;
@@ -26,6 +29,9 @@ export type VideoDetail = {
 };
 
 export async function getVideos(): Promise<VideoListItem[]> {
+  if (isDemoMode) {
+    return [{ id: 1, filename: 'test1.MP4', mimeType: 'video/mp4', createdAt: '2026-10-18T00:00:00.000Z', hasSentences: true }];
+  }
   const res = await fetch(`${API}/videos`);
   if (!res.ok) throw new Error('Failed to fetch videos');
   const videos = await res.json();
@@ -37,12 +43,19 @@ export async function getVideos(): Promise<VideoListItem[]> {
 }
 
 export async function getVideo(id: number): Promise<VideoDetail> {
+  if (isDemoMode) {
+    if (id !== 1) throw new Error('Demo video not found');
+    const res = await fetch(demoAsset('test1-analysis.json'));
+    if (!res.ok) throw new Error('Failed to load demo analysis');
+    return res.json();
+  }
   const res = await fetch(`${API}/videos/${id}`);
   if (!res.ok) throw new Error('Failed to fetch video');
   return res.json();
 }
 
 export function getVideoFileUrl(id: number): string {
+  if (isDemoMode && id === 1) return demoAsset('test1.mp4');
   return `${API}/videos/${id}/file`;
 }
 
@@ -64,6 +77,7 @@ export async function uploadVideo(file: File): Promise<{
   reused?: boolean;
   message?: string;
 }> {
+  if (isDemoMode) throw new Error('Uploading and AI analysis are available in the local version.');
   const form = new FormData();
   form.append('video', file);
   const res = await fetch(`${API}/videos`, { method: 'POST', body: form });
