@@ -495,7 +495,7 @@ const pauseUserAudio = () => {
   return (
     <div className="min-h-screen bg-white text-[#37352f] font-sans selection:bg-[#e7e7e5] selection:text-[#37352f]">
       <header className="bg-white/95 border-b border-[#e9e9e7] sticky top-0 z-10 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+        <div className={cn('mx-auto px-4 sm:px-6 h-12 flex items-center justify-between', videoUrl ? 'max-w-[1536px]' : 'max-w-7xl')}>
           <button
             type="button"
             onClick={() => {
@@ -1060,7 +1060,7 @@ const pauseUserAudio = () => {
         </div>
       </main>
 
-      <footer className="max-w-6xl mx-auto px-4 sm:px-6 py-6 border-t border-[#e9e9e7] mt-10">
+      <footer className={cn('mx-auto px-4 sm:px-6 py-6 border-t border-[#e9e9e7] mt-10', videoUrl ? 'max-w-[1536px]' : 'max-w-7xl')}>
         <div className="flex items-center gap-2 text-xs text-[#9b9a97]">
           <Volume2 size={13} />
           <span>EchoEnglish</span>
