@@ -142,7 +142,32 @@ export default function App() {
     setIsPlaying(false);
   };
 
-  const pauseUserAudio = () => {
+    const toggleVideoPlayback = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!video.paused) {
+      pauseVideoPlayback();
+      return;
+    }
+
+    // Manual full-video playback supersedes any sentence playback timer.
+    playbackRequestRef.current += 1;
+    if (playbackTimerRef.current) {
+      window.clearTimeout(playbackTimerRef.current);
+      playbackTimerRef.current = null;
+    }
+    pauseUserAudio();
+
+    try {
+      await video.play();
+    } catch (err) {
+      console.warn('Video playback failed:', err);
+      setError('Could not play this video. Please try again.');
+    }
+  };
+
+const pauseUserAudio = () => {
     if (userAudioRef.current) {
       userAudioRef.current.pause();
       userAudioRef.current = null;
@@ -518,7 +543,7 @@ export default function App() {
                       }}
                       onPause={() => setIsPlaying(false)}
                     />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
+                    <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 cursor-pointer">
                       {isPlaying ? <Pause className="text-white" size={48} /> : <Play className="text-white" size={48} />}
                     </div>
                   </div>
@@ -560,7 +585,7 @@ export default function App() {
                               className="w-full text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#37352f] focus-visible:ring-offset-2 rounded-[4px]"
                             >
                               <div className="relative aspect-video overflow-hidden rounded-[4px] border border-[#e9e9e7] bg-[#f1f1ef] group-hover:border-[#c7c7c5] transition-colors">
-                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#9b9a97] bg-[linear-gradient(135deg,#f7f7f5,#e9e9e7)]">
+                                <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#9b9a97] bg-[linear-gradient(135deg,#f7f7f5,#e9e9e7)]">
                                   <Video size={20} />
                                   <span className="text-xs">No preview</span>
                                 </div>
@@ -1010,7 +1035,7 @@ export default function App() {
                             />
                           </svg>
                           {/* Legend */}
-                          <div className="absolute top-2 right-3 flex items-center gap-3">
+                          <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute top-2 right-3 flex items-center gap-3">
                             <div className="flex items-center gap-1">
                               <div className="w-3 h-0.5 bg-blue-500" />
                               <span className="text-[9px] text-gray-400">Original</span>
@@ -1020,7 +1045,7 @@ export default function App() {
                               <span className="text-[9px] text-gray-400">Yours</span>
                             </div>
                           </div>
-                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-gray-400">
+                          <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-gray-400">
                             Time (s)
                           </div>
                         </div>
