@@ -56,7 +56,21 @@ export default function App() {
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    api.getVideos().then(setVideoList).catch(console.error);
+    api.getVideos().then(async (videos) => {
+      setVideoList(videos);
+      if (api.isDemoMode && videos[0]) {
+        const detail = await api.getVideo(videos[0].id);
+        setVideoId(detail.id);
+        setFilename(detail.filename);
+        setFileSize(null);
+        setVideoUrl(api.getVideoFileUrl(detail.id));
+        setSentences(detail.sentences);
+        setRecordedUrls({});
+        setTranscribedTexts({});
+        setTranscribeStatus({});
+        setCurrentSentenceIndex(null);
+      }
+    }).catch(console.error);
   }, []);
 
   const uniqueVideoList = useMemo(() => {
