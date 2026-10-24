@@ -56,21 +56,41 @@ export default function App() {
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    api.getVideos().then(async (videos) => {
-      setVideoList(videos);
-      if (api.isDemoMode && videos[0]) {
-        const detail = await api.getVideo(videos[0].id);
-        setVideoId(detail.id);
-        setFilename(detail.filename);
-        setFileSize(null);
-        setVideoUrl(api.getVideoFileUrl(detail.id));
-        setSentences(detail.sentences);
-        setRecordedUrls({});
-        setTranscribedTexts({});
-        setTranscribeStatus({});
-        setCurrentSentenceIndex(null);
+    let cancelled = false;
+
+    const loadInitialVideo = async () => {
+      try {
+        const videos = await api.getVideos();
+        if (cancelled) return;
+        setVideoList(videos);
+
+        // GitHub Pages is a public showcase: open the bundled example immediately
+        // so visitors see the video and its parsed practice sentences on arrival.
+        if (api.isDemoMode && videos[0]) {
+          const detail = await api.getVideo(videos[0].id);
+          if (cancelled) return;
+          setVideoId(detail.id);
+          setFilename(detail.filename);
+          setFileSize(null);
+          setVideoUrl(api.getVideoFileUrl(detail.id));
+          setSentences(detail.sentences);
+          setRecordedUrls({});
+          setTranscribedTexts({});
+          setTranscribeStatus({});
+          setCurrentSentenceIndex(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setError('Failed to load the demo video. Please refresh and try again.');
+        }
       }
-    }).catch(console.error);
+    };
+
+    loadInitialVideo();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const uniqueVideoList = useMemo(() => {
@@ -142,7 +162,7 @@ export default function App() {
     setIsPlaying(false);
   };
 
-    const toggleVideoPlayback = async () => {
+  const toggleVideoPlayback = async () => {
     const video = videoRef.current;
     if (!video) return;
 
@@ -167,7 +187,7 @@ export default function App() {
     }
   };
 
-const pauseUserAudio = () => {
+  const pauseUserAudio = () => {
     if (userAudioRef.current) {
       userAudioRef.current.pause();
       userAudioRef.current = null;
@@ -245,7 +265,7 @@ const pauseUserAudio = () => {
     onDrop,
     accept: { 'video/*': [] },
     multiple: false,
-    disabled: isLoading,
+    disabled: isLoading || api.isDemoMode,
   } as any);
 
   const handleTranscribe = async () => {
@@ -362,6 +382,8 @@ const pauseUserAudio = () => {
       };
 
       mediaRecorder.onstop = () => {
+        // Preserve the browser's actual recording format (Chrome commonly uses WebM),
+        // otherwise a locally-created blob may exist but fail to play back.
         const recordingMimeType = audioChunksRef.current[0]?.type || mediaRecorder.mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type: recordingMimeType });
         if (videoId != null && !api.isDemoMode) {
@@ -526,7 +548,7 @@ const pauseUserAudio = () => {
             <section>
               <div className="mb-5">
                 <h2 className="text-xl font-semibold tracking-[-0.02em]">{videoUrl ? 'Video' : 'Your videos'}</h2>
-                {!videoUrl && <p className="mt-1 text-sm text-[#787774]">Upload a video or continue from your recent practice.</p>}
+                {!videoUrl && <p className="mt-1 text-sm text-[#787774]">{api.isDemoMode ? 'Explore a pre-analyzed video in this public demo.' : 'Upload a video or continue from your recent practice.'}</p>}
               </div>
 
               {videoUrl ? (
@@ -543,9 +565,19 @@ const pauseUserAudio = () => {
                       }}
                       onPause={() => setIsPlaying(false)}
                     />
-                    <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 cursor-pointer">
-                      {isPlaying ? <Pause className="text-white" size={48} /> : <Play className="text-white" size={48} />}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleVideoPlayback}
+                      aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                      className={cn(
+                        'absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white',
+                        isPlaying ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100' : 'opacity-100'
+                      )}
+                    >
+                      <span className="w-16 h-16 rounded-full bg-black/55 flex items-center justify-center text-white shadow-sm">
+                        {isPlaying ? <Pause size={34} fill="currentColor" /> : <Play size={34} fill="currentColor" className="ml-1" />}
+                      </span>
+                    </button>
                   </div>
                   <div className="flex items-center justify-between gap-3 px-3 py-3 border-t border-[#e9e9e7]">
                     <div className="flex items-center gap-3">
@@ -554,7 +586,7 @@ const pauseUserAudio = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate max-w-[190px]">{displayFilename(filename)}</p>
-                        {fileSize != null && <p className="text-xs text-[#9b9a97]">{(fileSize / (1024 * 1024)).toFixed(1)} MB</p>}
+                        {fileSize != null && <p className="text-sm text-[#9b9a97]">{(fileSize / (1024 * 1024)).toFixed(1)} MB</p>}
                       </div>
                     </div>
                     <button
@@ -574,7 +606,7 @@ const pauseUserAudio = () => {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-medium">Recent</h3>
-                        <span className="text-xs text-[#9b9a97]">{uniqueVideoList.length} videos</span>
+                        <span className="text-sm text-[#9b9a97]">{uniqueVideoList.length} videos</span>
                       </div>
                       <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6">
                         {uniqueVideoList.map((v) => (
@@ -585,9 +617,9 @@ const pauseUserAudio = () => {
                               className="w-full text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#37352f] focus-visible:ring-offset-2 rounded-[4px]"
                             >
                               <div className="relative aspect-video overflow-hidden rounded-[4px] border border-[#e9e9e7] bg-[#f1f1ef] group-hover:border-[#c7c7c5] transition-colors">
-                                <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#9b9a97] bg-[linear-gradient(135deg,#f7f7f5,#e9e9e7)]">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#9b9a97] bg-[linear-gradient(135deg,#f7f7f5,#e9e9e7)]">
                                   <Video size={20} />
-                                  <span className="text-xs">No preview</span>
+                                  <span className="text-sm">No preview</span>
                                 </div>
                                 {!thumbnailErrors[v.id] && (
                                   <video
@@ -610,7 +642,7 @@ const pauseUserAudio = () => {
                               </div>
                               <div className="mt-2 min-w-0">
                                 <p className="text-sm font-medium truncate group-hover:underline underline-offset-2">{displayFilename(v.filename)}</p>
-                                <p className="mt-0.5 text-xs text-[#9b9a97]">{v.hasSentences ? 'Ready to practice' : 'Needs analysis'}</p>
+                                <p className="mt-0.5 text-sm text-[#9b9a97]">{v.hasSentences ? 'Ready to practice' : 'Needs analysis'}</p>
                               </div>
                             </button>
                           </li>
@@ -620,21 +652,25 @@ const pauseUserAudio = () => {
                   )}
 
                   <div>
-                    <h3 className="text-sm font-medium mb-3">Add a video</h3>
+                    <h3 className="text-sm font-medium mb-3">{api.isDemoMode ? 'Try your own video' : 'Add a video'}</h3>
                     <div
                       {...getRootProps()}
                       className={cn(
-                        'border border-dashed rounded-lg px-6 py-8 flex flex-col items-center justify-center transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-[#37352f] focus-within:ring-offset-2',
-                        isDragActive ? 'border-[#37352f] bg-[#f1f1ef]' : 'border-[#c7c7c5] bg-white hover:bg-[#fafafa] hover:border-[#9b9a97]'
+                        'border border-dashed rounded-lg px-6 py-8 flex flex-col items-center justify-center transition-colors focus-within:ring-2 focus-within:ring-[#37352f] focus-within:ring-offset-2',
+                        api.isDemoMode
+                          ? 'border-[#d3d3d1] bg-[#fafafa] cursor-default'
+                          : isDragActive ? 'border-[#37352f] bg-[#f1f1ef] cursor-pointer' : 'border-[#c7c7c5] bg-white hover:bg-[#fafafa] hover:border-[#9b9a97] cursor-pointer'
                       )}
                     >
                       <input {...getInputProps()} />
                       <div className="w-9 h-9 bg-[#f1f1ef] rounded-[4px] flex items-center justify-center text-[#37352f] mb-3">
                         <Upload size={18} />
                       </div>
-                      <p className="text-sm font-medium text-center mb-1">Upload a video</p>
+                      <p className="text-sm font-medium text-center mb-1">{api.isDemoMode ? 'Upload and AI analysis run locally' : 'Upload a video'}</p>
                       <p className="text-sm text-[#787774] text-center max-w-sm">
-                        Drop a file here or click to browse. Supports MP4, MOV and WebM.
+                        {api.isDemoMode
+                          ? 'Download the project from GitHub and add your own Kimi API key to analyze private videos.'
+                          : 'Drop a file here or click to browse. Supports MP4, MOV and WebM.'}
                       </p>
                     </div>
                   </div>
@@ -644,7 +680,7 @@ const pauseUserAudio = () => {
                       <span>Tips for better results</span>
                       <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
                     </summary>
-                    <div className="pt-3 text-xs text-[#787774]">
+                    <div className="pt-3 text-sm text-[#787774]">
                       <ul className="list-disc space-y-1.5 ml-4">
                         <li>Use clear English audio with minimal background noise</li>
                         <li>Optimal video length: 30 seconds to 5 minutes</li>
@@ -679,7 +715,7 @@ const pauseUserAudio = () => {
                     </>
                   )}
                 </button>
-                <p className="text-xs text-[#787774]">
+                <p className="text-sm text-[#787774]">
                   Kimi will transcribe the video and split it into sentences for practice.
                 </p>
               </motion.div>
@@ -702,7 +738,7 @@ const pauseUserAudio = () => {
                   <h2 className="text-xl font-semibold tracking-[-0.02em]">Practice</h2>
                   <p className="mt-1 text-sm text-[#787774]">Listen, repeat and compare each sentence.</p>
                 </div>
-                {sentences.length > 0 && <span className="text-xs text-[#9b9a97] shrink-0">{sentences.length} sentences</span>}
+                {sentences.length > 0 && <span className="text-sm text-[#9b9a97] shrink-0">{sentences.length} sentences</span>}
               </div>
               
               <div className="flex-1 min-h-[320px] border-y border-[#e9e9e7] overflow-hidden flex flex-col">
@@ -719,7 +755,7 @@ const pauseUserAudio = () => {
                           )}
                         >
                           <div className="flex flex-col gap-2 shrink-0 items-center w-8">
-                            <span className="text-xs tabular-nums text-[#9b9a97] h-5 flex items-center">{String(index + 1).padStart(2, '0')}</span>
+                            <span className="text-sm tabular-nums text-[#9b9a97] h-5 flex items-center">{String(index + 1).padStart(2, '0')}</span>
                             <button 
                               type="button"
                               aria-label={`${currentSentenceIndex === index && isPlaying ? 'Pause' : 'Play'} sentence ${index + 1}`}
@@ -795,10 +831,10 @@ const pauseUserAudio = () => {
                           <div className="flex-1 min-w-0 space-y-3 pt-5" onClick={() => togglePlaySentence(index)}>
                             {transcribedTexts[index] ? (
                               <div className={cn(
-                                "text-[17px] leading-7 transition-colors space-y-2",
+                                "text-base font-sans font-normal leading-7 transition-colors space-y-2",
                                 currentSentenceIndex === index ? "text-[#37352f]" : "text-[#4f4e49]"
                               )}>
-                                <p className="text-xs text-[#9b9a97] mb-1">Original</p>
+                                <p className="text-sm text-[#9b9a97] mb-1">Original</p>
                                 <p>
                                   {compareTexts(sentence.text, transcribedTexts[index]).map((item, i) => (
                                     <span key={i} className={item.isDifferent ? 'bg-red-100 text-red-700 px-1 rounded' : ''}>
@@ -806,13 +842,13 @@ const pauseUserAudio = () => {
                                     </span>
                                   ))}
                                 </p>
-                                <div className="text-xs mt-2 text-[#787774] border-l-2 border-[#d3d3d1] pl-2">
+                                <div className="text-sm mt-2 text-[#787774] border-l-2 border-[#d3d3d1] pl-2">
                                   <span className="font-medium">Your recording:</span> {transcribedTexts[index]}
                                 </div>
                               </div>
                             ) : (
                               <p className={cn(
-                                "text-[17px] leading-7 transition-colors",
+                                "text-base font-sans font-normal leading-7 transition-colors",
                                 currentSentenceIndex === index ? "text-[#37352f]" : "text-[#4f4e49]"
                               )}>
                                 {sentence.text}
@@ -1035,7 +1071,7 @@ const pauseUserAudio = () => {
                             />
                           </svg>
                           {/* Legend */}
-                          <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute top-2 right-3 flex items-center gap-3">
+                          <div className="absolute top-2 right-3 flex items-center gap-3">
                             <div className="flex items-center gap-1">
                               <div className="w-3 h-0.5 bg-blue-500" />
                               <span className="text-[9px] text-gray-400">Original</span>
@@ -1045,7 +1081,7 @@ const pauseUserAudio = () => {
                               <span className="text-[9px] text-gray-400">Yours</span>
                             </div>
                           </div>
-                          <div onClick={toggleVideoPlayback} role="button" aria-label={isPlaying ? 'Pause video' : 'Play video'} className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-gray-400">
+                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-gray-400">
                             Time (s)
                           </div>
                         </div>
@@ -1061,7 +1097,7 @@ const pauseUserAudio = () => {
       </main>
 
       <footer className={cn('mx-auto px-4 sm:px-6 py-6 border-t border-[#e9e9e7] mt-10', videoUrl ? 'max-w-[1536px]' : 'max-w-7xl')}>
-        <div className="flex items-center gap-2 text-xs text-[#9b9a97]">
+        <div className="flex items-center gap-2 text-sm text-[#9b9a97]">
           <Volume2 size={13} />
           <span>EchoEnglish</span>
         </div>
